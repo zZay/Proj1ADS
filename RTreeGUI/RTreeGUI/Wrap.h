@@ -8,7 +8,8 @@
 #include <sstream>
 
 #define DIM_OF_TREE 20
-#define HALF_LENGTH_OF_EDGE 60000
+#define HALF_LENGTH_OF_EDGE 300
+#define TARGET_NUM 100
 
 using namespace std;
 typedef RStarTree<int, DIM_OF_TREE, 32, 64> RTree;
@@ -23,7 +24,7 @@ public:
 	void fromTxtBuildRStarTree(std::string pathOfFile);
 	void fromTxtQuery_Name(std::string pathOfFile);
 	void fromTxtQuery_Vec(std::string pathOfFile);
-	BoundingBox fromVectorToBoundBox(vector<int> vec, bool isBox = false);
+	BoundingBox fromVectorToBoundBox(vector<int> vec, bool isBox = false, int i = 0);
 	vector<int> fromBoundBoxToVector(BoundingBox bound);
 	vector<RTree::BoundedItem> searchByBB(BoundingBox bound);
 	RTreeWrapper();
@@ -59,7 +60,7 @@ void RTreeWrapper::fromTxtBuildRStarTree(std::string pathOfFile)
 	}
 }
 
-BoundingBox RTreeWrapper::fromVectorToBoundBox(vector<int> vec, bool isBox)
+BoundingBox RTreeWrapper::fromVectorToBoundBox(vector<int> vec, bool isBox, int i)
 {
 	BoundingBox bb;
 	for (int i = 0; i < DIM_OF_TREE; i++)
@@ -67,9 +68,8 @@ BoundingBox RTreeWrapper::fromVectorToBoundBox(vector<int> vec, bool isBox)
 		bb.edges[i].first = bb.edges[i].second = vec[i];
 		if (isBox)
 		{
-			bb.edges[i].first -= HALF_LENGTH_OF_EDGE;
-			bb.edges[i].second += HALF_LENGTH_OF_EDGE;
-
+			bb.edges[i].first -= HALF_LENGTH_OF_EDGE << i;
+			bb.edges[i].second += HALF_LENGTH_OF_EDGE << i;
 		}
 	}
 
@@ -115,9 +115,18 @@ void RTreeWrapper::fromTxtQuery_Name(std::string pathOfFile)
 	{
 		getline(readData, temp);
 		vec = nameToVector[temp];
+
+		int i = 0;
 		BoundingBox bb = fromVectorToBoundBox(vec, true);
 		answer = searchByBB(bb);
+		while(answer.size() < TARGET_NUM)
+		{
+			bb = fromVectorToBoundBox(vec, true, ++i);
+			answer = searchByBB(bb);
+		}
 		vec.clear();
+		answer.resize(TARGET_NUM);
+
 		for (int i = 0; i < answer.size(); i++)
 		{
 			writeData << vectorToName[fromBoundBoxToVector(answer[i].bound)] << endl;
@@ -149,9 +158,17 @@ void RTreeWrapper::fromTxtQuery_Vec(std::string pathOfFile)
 		}
 		number.clear();
 
+		int i = 0;
 		BoundingBox bb = fromVectorToBoundBox(vec, true);
 		answer = searchByBB(bb);
+
+		while(answer.size() < TARGET_NUM)
+		{
+			bb = fromVectorToBoundBox(vec, true, ++i);
+			answer = searchByBB(bb);
+		}
 		vec.clear();
+		answer.resize(TARGET_NUM);
 
 		for (int i = 0; i < answer.size(); i++)
 		{
